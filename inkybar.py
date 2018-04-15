@@ -179,7 +179,7 @@ for i in range(0, len(_c128table)):
 
 def _bitsFromWidths(widths):
     result = []
-    onesMode = True
+    onesMode = False
     for width in widths:
         for i in range(0,int(width)):
             result += [1] if onesMode else [0]
@@ -229,29 +229,37 @@ def c39rect(text, xy=(None, None), smashCase=False, height=inkyphat.HEIGHT):
     bits = c39bits(text, smashCase)
     _bitsRect(bits, xy, height)
 
-def _c128bits_from_values(values):
+def _c128widthsFromValues(values):
     WIDTHS = 4
-    QUIET=[0,0,0,0,0,0,0,0,0,0]
-    result = []
+    QUIET='901'
+    result = ''
     result += QUIET
     
     for value in values:
-        result += _bitsFromWidths(_c128table[value][WIDTHS])
+        result += _c128table[value][WIDTHS]
     
     result += QUIET
     return result
 
 def _c128values(text):
     result = []
+    checksum = 0
     result += [_c128table[_c128["START_B"]][0]]
+    checksum += result[len(result)-1]
+    checkweight = 1
     for char in text:
         result += [_c128["B"][char]]
+        checksum += result[len(result)-1]*checkweight
+        checkweight += 1
+    checksum = checksum % 103
+    result += [checksum]
     result += [_c128table[_c128["STOP"]][0]]
     return result
 
 def c128bits(text):
     values = _c128values(text)
-    return _c128bits_from_values(values)
+    widths = _c128widthsFromValues(values)
+    return _bitsFromWidths(widths)
 
 def c128rect(text, xy=(None, None), height=inkyphat.HEIGHT):
     """
