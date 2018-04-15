@@ -222,7 +222,7 @@ def c39bits(text, smashCase=False):
     result += _c39["PAD"]
     return result
 
-def c39rect(text, xy=(None, None), smashCase=False, height=inkyphat.HEIGHT):
+def c39rect(text, xy=(None, None), height=inkyphat.HEIGHT, smashCase=False):
     """
     Draws a code-39 barcode. Set x or y to None to center on that axis.
     """
