@@ -243,13 +243,15 @@ def _c128widthsFromValues(values):
 
 def _c128values(text):
     result = []
-    checksum = 0
     result += [_c128table[_c128["START_B"]][0]]
-    checksum += result[len(result)-1]
-    checkweight = 1
     for char in text:
         result += [_c128["B"][char]]
-        checksum += result[len(result)-1]*checkweight
+    
+    # Weights go 1, 1, 2, 3, ..., so we start at 0 and use max(n, 1)
+    checksum = 0
+    checkweight = 0
+    for value in result:
+        checksum += value * max(checkweight, 1)
         checkweight += 1
     checksum = checksum % 103
     result += [checksum]
