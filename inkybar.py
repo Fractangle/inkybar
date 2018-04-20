@@ -1,3 +1,5 @@
+import re
+
 import inkyphat
 
 _c39 = {
@@ -164,10 +166,13 @@ _c128 = {
     'START_A': 103,
     'START_B': 104,
     'START_C': 105,
+    'START': {'A': 103,
+              'B': 104,
+              'C': 105,},
     'STOP': 106,  
-    'A': {},
-    'B': {},
-    'C': {},
+    'A': {'WIDTH': 1},
+    'B': {'WIDTH': 1},
+    'C': {'WIDTH': 2},
 }
 
 for i in range(0, len(_c128table)):
@@ -241,11 +246,54 @@ def _c128widthsFromValues(values):
     result += QUIET
     return result
 
+def _c128chooseMode(text, currMode):
+    # Do we want to be in mode C?
+    if currMode == "?":
+        if re.match("[0-9]{4}", text):
+            return "C", False
+    else:
+        if currMode != "C":
+            if re.search("[^0-9]", text):
+                if re.match("^[0-9]{6}", text):
+                    return "C", False
+            else: # There are only numerals left
+                if re.match("(..)*$", text):
+                    return "C", False
+        else: # we're in mode C
+            if re.match("^[0-9]{2}", text):
+                return "C", False
+    
+    # We don't want to be in mode C... TODO: A or B? Mode or shift?
+    
+    return "B", False
+
 def _c128values(text):
     result = []
-    result += [_c128table[_c128["START_B"]][0]]
-    for char in text:
-        result += [_c128["B"][char]]
+    
+    baseMode = "?"
+    baseMode, junk = _c128chooseMode(text, baseMode)
+    result += [_c128["START"][baseMode]]
+    
+    index = 0
+    while index < len(text):
+        currMode = baseMode
+        newMode, isShift = _c128chooseMode(text[index:len(text)], baseMode)
+        if newMode != baseMode:
+            if isShift:
+                currMode = newMode
+            else:
+                result += [_c128[baseMode]["CODE_"+newMode]]
+                baseMode = newMode
+                currMode = baseMode
+        
+        width = _c128[currMode]["WIDTH"]
+        chunk = text[index:index+width]
+        if chunk in _c128[currMode].keys():
+            result += [_c128[currMode][chunk]]
+            index += width
+        else:
+            # Something went wrong
+            pass
     
     # Weights go 1, 1, 2, 3, ..., so we start at 0 and use max(n, 1)
     checksum = 0
