@@ -65,7 +65,7 @@ Returns an array of 1s and 0s corresponding to black and white pixels (including
 inkybar.c128rect(text, xy=(None, None), height=inkyphat.HEIGHT)
 ```
 
-`text` is the text to encode. If it contains characters that can't be represented in Code 128 mode B, all hell breaks loose. TODO: Make all hell not break loose.
+`text` is the text to encode. If it contains characters that can't be represented in Code 128, raises `ValueError`.
 
 `xy` is a 2-tuple of x and y coordinates corresponding to the top-left corner of the barcode (including the quiet zone). If either of them are set to `None`, the barcode will be centered along that axis. Defaults to `(None, None)`, which centers it in the screen.
 
@@ -79,8 +79,5 @@ inkybar.c128bits(text)
 
 Returns an array of 1s and 0s corresponding to black and white pixels (including the quiet zone).
 
-`text` is the text to encode. If it contains characters that can't be represented in Code 128 mode B, all hell breaks loose. TODO: Make all hell not break loose.
-
 ## To-do list
 * TODO: Text below barcode bars
-* TODO: Fully support code 128 format

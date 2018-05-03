@@ -324,6 +324,11 @@ def _c128chooseMode(text, currMode):
     raise RuntimeError("Failed to choose a mode, yell at github.com/Fractangle")
 
 def _c128values(text):
+    invalidMatch = re.search("[^\x00-\x7F]", text)
+    if invalidMatch:
+        invalidChar = invalidMatch.group()
+        raise ValueError("Cannot encode non-ascii value '" + invalidChar + "'")
+    
     result = []
     
     baseMode = "?"
