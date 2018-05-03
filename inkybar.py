@@ -247,25 +247,81 @@ def _c128widthsFromValues(values):
     return result
 
 def _c128chooseMode(text, currMode):
-    # Do we want to be in mode C?
+    nextA = re.search("[\x00-\x1F]", text)
+    nextB = re.search("[\x60-\x7F]", text)
+    
+    # If we don't have a mode, pick one
     if currMode == "?":
         if re.match("[0-9]{4}", text):
-            return "C", False
-    else:
-        if currMode != "C":
-            if re.search("[^0-9]", text):
-                if re.match("^[0-9]{6}", text):
-                    return "C", False
-            else: # There are only numerals left
-                if re.match("(..)*$", text):
-                    return "C", False
-        else: # we're in mode C
-            if re.match("^[0-9]{2}", text):
-                return "C", False
+            return "C", True
+        else:
+            if re.match("^[\x20-\x5F]*[\x00-\x1F]", text):
+                return "A", True
+            else:
+                return "B", True
     
-    # We don't want to be in mode C... TODO: A or B? Mode or shift?
+    # If we're not in mode C, should we change to it?
+    if currMode != "C":
+        if re.match(".*[^0-9]", text):
+            if re.match("^[0-9]{6}", text):
+                return "C", True
+        else:
+            if re.match("^([0-9]{2}){2,}$", text):
+                return "C", True
     
-    return "B", False
+    # If we're in mode C, what should we do?
+    if currMode == "C":
+        if re.match("^[0-9]{2}", text):
+            return "C", None
+        else:
+            if nextA and nextB:
+                if nextA.start() < nextB.start():
+                    return "A", True
+                else:
+                    return "B", True
+            else:
+                if nextA: # "not nextB" is implicit
+                    return "A", True
+                # If we don't explicitly need A, default to B
+                return "B", True
+    
+    # At this point, we should have nothing to do with mode C.
+    
+    if nextA and nextB:
+        if nextA.start() < nextB.start():
+            if currMode == "A":
+                return "A", None
+            if re.match("^([\x20-\x5F]*[\x00-\x1F]){3}", text):
+                return "A", True
+            else:
+                if re.match("^[\x00-\x1F]", text):
+                    return "A", False
+                else:
+                    return "B", None
+        else:
+            if currMode == "B":
+                return "B", None
+            if re.match("^([\x20-\x5F]*[\x60-\x7F]){3}", text):
+                return "B", True
+            else:
+                if re.match("^[\x60-\x7F]", text):
+                    return "B", False
+                else:
+                    return "A", None
+    
+    if nextA:
+        if currMode == "B":
+            return "A", True
+        return "A", None
+    
+    if nextB:
+        if currMode == "A":
+            return "B", True
+        return "B", None
+    
+    return currMode, None
+    
+    raise RuntimeError("Failed to choose a mode, yell at github.com/Fractangle")
 
 def _c128values(text):
     result = []
@@ -277,14 +333,16 @@ def _c128values(text):
     index = 0
     while index < len(text):
         currMode = baseMode
-        newMode, isShift = _c128chooseMode(text[index:len(text)], baseMode)
+        newMode, isPerm = _c128chooseMode(text[index:len(text)], baseMode)
         if newMode != baseMode:
-            if isShift:
+            if isPerm is False:
                 currMode = newMode
+                result += [_c128[baseMode]["SHIFT_"+newMode]]
             else:
-                result += [_c128[baseMode]["CODE_"+newMode]]
-                baseMode = newMode
-                currMode = baseMode
+                if isPerm is True:
+                    result += [_c128[baseMode]["CODE_"+newMode]]
+                    baseMode = newMode
+                    currMode = baseMode
         
         width = _c128[currMode]["WIDTH"]
         chunk = text[index:index+width]
@@ -293,7 +351,7 @@ def _c128values(text):
             index += width
         else:
             # Something went wrong
-            pass
+            raise ValueError("Can't encode '" + chunk + "' in mode " + currMode)
     
     # Weights go 1, 1, 2, 3, ..., so we start at 0 and use max(n, 1)
     checksum = 0
