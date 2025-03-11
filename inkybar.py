@@ -1,6 +1,13 @@
 import re
 
-import inkyphat
+from inky import InkyPHAT
+from PIL import Image, ImageDraw
+
+display = InkyPHAT('red')
+dispW = 212
+dispH = 104
+imgbuf = Image.new('P', (dispW, dispH))
+draw = ImageDraw.Draw(imgbuf)
 
 _c39 = {
     'A': [1,1,0,1,0,1,0,0,1,0,1,1,0],
@@ -191,16 +198,16 @@ def _bitsFromWidths(widths):
         onesMode = not onesMode
     return result
 
-def _bitsRect(bits, xy=(None, None), height=inkyphat.HEIGHT):
+def _bitsRect(bits, xy=(None, None), height=dispH):
     origX, origY = xy
     if origX == None:
-        origX = int((inkyphat.WIDTH - len(bits))/2)
+        origX = int((dispW - len(bits))/2)
     if origY == None:
-        origY = int((inkyphat.HEIGHT - height)/2)
+        origY = int((dispH - height)/2)
     
     x = origX
     for bit in bits:
-        inkyphat.line((x, origY, x, origY+height), bit)
+        draw.line([x, origY, x, origY+height], bit)
         x+=1
 
 def c39bits(text, smashCase=False):
@@ -227,7 +234,7 @@ def c39bits(text, smashCase=False):
     result += _c39["PAD"]
     return result
 
-def c39rect(text, xy=(None, None), height=inkyphat.HEIGHT, smashCase=False):
+def c39rect(text, xy=(None, None), height=dispH, smashCase=False):
     """
     Draws a code-39 barcode. Set x or y to None to center on that axis.
     """
@@ -374,7 +381,7 @@ def c128bits(text):
     widths = _c128widthsFromValues(values)
     return _bitsFromWidths(widths)
 
-def c128rect(text, xy=(None, None), height=inkyphat.HEIGHT):
+def c128rect(text, xy=(None, None), height=dispH):
     """
     Draws a code-128 barcode. Set x or y to None to center on that axis.
     Currently only uses mode B due to programmer laziness. TODO: ensmarten it
