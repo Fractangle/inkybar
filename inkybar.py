@@ -210,6 +210,10 @@ def _bitsRect(bits, xy=(None, None), height=dispH):
         draw.line([x, origY, x, origY+height], bit)
         x+=1
 
+def show():
+    display.set_image(imgbuf)
+    display.show()
+
 def c39bits(text, smashCase=False):
     """
     Returns an array of 0s and 1s representing the (padded) code 39 barcode.
